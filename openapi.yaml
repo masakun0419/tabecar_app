@@ -1,0 +1,132 @@
+openapi: 3.0.3
+info:
+  title: 食べカー API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8888/api/v1
+paths:
+  /auth/register:
+    post:
+      summary: ユーザー登録
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, display_name, user_type]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                display_name: { type: string }
+                user_type: { type: string, enum: [USER, SHOP] }
+      responses:
+        '201': { description: Created }
+  /auth/login:
+    post:
+      summary: ログイン
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200': { description: JWT access token を返却 }
+  /shops:
+    get:
+      summary: 店舗一覧取得
+      parameters:
+        - in: query
+          name: latitude
+          schema: { type: number, format: double }
+        - in: query
+          name: longitude
+          schema: { type: number, format: double }
+        - in: query
+          name: category_id
+          schema: { type: integer }
+        - in: query
+          name: open_now
+          schema: { type: boolean }
+      responses:
+        '200': { description: 店舗一覧 }
+    post:
+      summary: 店舗登録（店舗ユーザー）
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201': { description: Created }
+  /shops/{shop_id}:
+    get:
+      summary: 店舗詳細取得
+      parameters:
+        - in: path
+          name: shop_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: 店舗詳細 }
+  /events:
+    get:
+      summary: 出店予定一覧取得
+      parameters:
+        - in: query
+          name: latitude
+          schema: { type: number, format: double }
+        - in: query
+          name: longitude
+          schema: { type: number, format: double }
+        - in: query
+          name: radius_km
+          schema: { type: integer, default: 5 }
+      responses:
+        '200': { description: 出店予定一覧 }
+    post:
+      summary: 出店予定登録（店舗ユーザー）
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201': { description: Created }
+  /favorites:
+    get:
+      summary: お気に入り一覧
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: お気に入り一覧 }
+    post:
+      summary: お気に入り登録
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201': { description: Created }
+  /favorites/{shop_id}:
+    delete:
+      summary: お気に入り解除
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: shop_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Deleted }
+  /device-tokens:
+    post:
+      summary: FCMトークン登録
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201': { description: Created }
+  /notifications:
+    get:
+      summary: 通知一覧
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: 通知一覧 }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
