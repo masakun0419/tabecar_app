@@ -1,21 +1,21 @@
-//
-//  ContentView.swift
-//  tabecar
-//
-//  Created by KondouMasaki on 2026/06/01.
-//
-
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var session = AuthSession()
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        Group {
+            if session.isAuthenticated {
+                RootTabView()
+                    .environmentObject(session)
+            } else {
+                AuthRootView()
+                    .environmentObject(session)
+            }
         }
-        .padding()
+        .task {
+            await session.restore()
+        }
     }
 }
 
