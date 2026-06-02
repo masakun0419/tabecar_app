@@ -60,6 +60,11 @@ final class APIClient {
         return try await request(path, method: "POST", authenticated: authenticated, body: data)
     }
 
+    func patch<Request: Encodable, Response: Decodable>(_ path: String, body: Request, authenticated: Bool = true) async throws -> Response {
+        let data = try encoder.encode(body)
+        return try await request(path, method: "PATCH", authenticated: authenticated, body: data)
+    }
+
     func postNoContent<Request: Encodable>(_ path: String, body: Request, authenticated: Bool = false) async throws {
         let data = try encoder.encode(body)
         let _: EmptyResponse = try await request(path, method: "POST", authenticated: authenticated, body: data)

@@ -166,3 +166,25 @@ class NotificationResponse(BaseModel):
     body: str
     is_read: bool
     created_at: datetime
+
+
+class ProfileResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    notification_radius_km: int
+    last_latitude: Decimal | None
+    last_longitude: Decimal | None
+
+
+class ProfileUpdateRequest(BaseModel):
+    latitude: Decimal | None = None
+    longitude: Decimal | None = None
+    notification_radius_km: int | None = Field(default=None, ge=1, le=100)
+
+
+class UnreadCountResponse(BaseModel):
+    count: int
+
+
+class ReadAllNotificationsResponse(BaseModel):
+    updated: int

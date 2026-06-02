@@ -124,6 +124,40 @@ paths:
       security: [{ bearerAuth: [] }]
       responses:
         '200': { description: 通知一覧 }
+  /notifications/unread-count:
+    get:
+      summary: 未読通知件数
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: 未読件数 }
+  /notifications/read-all:
+    post:
+      summary: すべて既読にする
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: 更新件数 }
+  /notifications/{notification_id}/read:
+    patch:
+      summary: 通知を既読にする
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: notification_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: 更新後の通知 }
+  /profile:
+    get:
+      summary: ユーザープロフィール取得
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: プロフィール }
+    patch:
+      summary: ユーザープロフィール更新（位置情報・通知半径）
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: 更新後のプロフィール }
 components:
   securitySchemes:
     bearerAuth:

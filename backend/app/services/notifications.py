@@ -32,7 +32,7 @@ def notify_favorite_users(db: Session, event: ShopEvent) -> None:
     db.commit()
 
 
-def notify_nearby_users(db: Session, event: ShopEvent, radius_km: int = 5) -> None:
+def notify_nearby_users(db: Session, event: ShopEvent) -> None:
     from app.services.geo import haversine_km
 
     profiles = db.query(UserProfile).filter(UserProfile.last_latitude.isnot(None)).all()
@@ -43,7 +43,7 @@ def notify_nearby_users(db: Session, event: ShopEvent, radius_km: int = 5) -> No
             float(event.latitude),
             float(event.longitude),
         )
-        if distance <= radius_km:
+        if distance <= profile.notification_radius_km:
             notification = Notification(
                 user_id=profile.user_id,
                 shop_id=event.shop_id,

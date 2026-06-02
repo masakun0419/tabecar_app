@@ -165,6 +165,25 @@ struct AppNotification: Codable, Identifiable {
     let createdAt: Date
 }
 
+struct UserProfile: Codable {
+    let notificationRadiusKm: Int
+    let lastLatitude: Double?
+    let lastLongitude: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case notificationRadiusKm = "notification_radius_km"
+        case lastLatitude = "last_latitude"
+        case lastLongitude = "last_longitude"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        notificationRadiusKm = try container.decode(Int.self, forKey: .notificationRadiusKm)
+        lastLatitude = try container.decodeLossyDoubleIfPresent(forKey: .lastLatitude)
+        lastLongitude = try container.decodeLossyDoubleIfPresent(forKey: .lastLongitude)
+    }
+}
+
 struct ShopCreateRequest: Encodable {
     let categoryId: Int?
     let name: String

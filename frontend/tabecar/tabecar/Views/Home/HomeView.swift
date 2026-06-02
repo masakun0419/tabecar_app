@@ -51,6 +51,12 @@ struct HomeView: View {
             .overlay {
                 if viewModel.isLoading {
                     ProgressView()
+                } else if viewModel.events.isEmpty && viewModel.shops.isEmpty && viewModel.errorMessage == nil {
+                    ContentUnavailableView(
+                        "情報なし",
+                        systemImage: "truck.box",
+                        description: Text("近くの出店予定や店舗がここに表示されます")
+                    )
                 }
             }
             .navigationTitle("食べカー")
