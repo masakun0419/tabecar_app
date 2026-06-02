@@ -1,4 +1,5 @@
 import Combine
+import CoreLocation
 import Foundation
 
 @MainActor
