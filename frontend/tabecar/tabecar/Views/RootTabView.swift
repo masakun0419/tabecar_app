@@ -2,6 +2,8 @@ import SwiftUI
 
 struct RootTabView: View {
     @EnvironmentObject private var session: AuthSession
+    @StateObject private var badgeViewModel = NotificationBadgeViewModel()
+    @ObservedObject private var locationService = LocationService.shared
 
     var body: some View {
         TabView {
@@ -21,9 +23,11 @@ struct RootTabView: View {
                 }
 
             NotificationsView()
+                .environmentObject(badgeViewModel)
                 .tabItem {
                     Label("通知", systemImage: "bell")
                 }
+                .badge(badgeViewModel.unreadCount)
 
             if session.assumedUserType == .shop {
                 ShopOwnerView()
@@ -36,6 +40,12 @@ struct RootTabView: View {
                 .tabItem {
                     Label("設定", systemImage: "person.crop.circle")
                 }
+        }
+        .tint(Tabecar.orange)
+        .task {
+            await locationService.refreshProfileSettings()
+            await locationService.syncToServer()
+            await badgeViewModel.refresh()
         }
     }
 }

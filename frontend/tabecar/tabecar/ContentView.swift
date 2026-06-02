@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 struct ContentView: View {
@@ -5,7 +6,9 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if session.isAuthenticated {
+            if !session.hasFinishedRestore {
+                ProgressView()
+            } else if session.isAuthenticated {
                 RootTabView()
                     .environmentObject(session)
             } else {
@@ -13,6 +16,7 @@ struct ContentView: View {
                     .environmentObject(session)
             }
         }
+        .tint(Tabecar.orange)
         .task {
             await session.restore()
         }

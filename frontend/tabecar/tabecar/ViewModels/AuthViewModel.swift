@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 @MainActor
@@ -27,7 +28,22 @@ final class AuthViewModel: ObservableObject {
 
         do {
             let response = try await service.login(email: email, password: password)
-            try session.signIn(token: response.accessToken, userType: userType)
+            try session.signIn(token: response.accessToken, userType: userType, email: email)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func loginWithBiometrics(session: AuthSession) async {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        do {
+            try session.loginWithBiometrics()
+        } catch let error as BiometricAuthError {
+            if case .cancelled = error { return }
+            errorMessage = error.localizedDescription
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -42,9 +58,10 @@ final class AuthViewModel: ObservableObject {
         do {
             _ = try await service.register(email: email, password: password, displayName: displayName, userType: userType)
             let response = try await service.login(email: email, password: password)
-            try session.signIn(token: response.accessToken, userType: userType)
+            try session.signIn(token: response.accessToken, userType: userType, email: email)
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 }
+

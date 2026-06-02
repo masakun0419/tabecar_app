@@ -2,13 +2,9 @@ import MapKit
 import SwiftUI
 
 struct FoodTruckMapView: View {
+    @ObservedObject private var locationService = LocationService.shared
     @StateObject private var viewModel = HomeViewModel()
-    @State private var cameraPosition: MapCameraPosition = .region(
-        MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 34.685087, longitude: 135.804848),
-            span: MKCoordinateSpan(latitudeDelta: 2.0, longitudeDelta: 2.0)
-        )
-    )
+    @State private var cameraPosition: MapCameraPosition = .automatic
 
     var body: some View {
         NavigationStack {
@@ -57,9 +53,35 @@ struct FoodTruckMapView: View {
                     .padding()
                 }
             }
+            .overlay {
+                if viewModel.isLoading {
+                    ProgressView()
+                } else if viewModel.events.isEmpty && viewModel.errorMessage == nil {
+                    ContentUnavailableView(
+                        "出店予定なし",
+                        systemImage: "map",
+                        description: Text("近くの出店予定がここに表示されます")
+                    )
+                }
+            }
             .navigationTitle("マップ")
             .navigationBarTitleDisplayMode(.inline)
             .task {
+                if let coordinate = await locationService.requestCoordinate() {
+                    cameraPosition = .region(
+                        MKCoordinateRegion(
+                            center: coordinate,
+                            span: MKCoordinateSpan(latitudeDelta: 0.15, longitudeDelta: 0.15)
+                        )
+                    )
+                } else {
+                    cameraPosition = .region(
+                        MKCoordinateRegion(
+                            center: CLLocationCoordinate2D(latitude: 34.685087, longitude: 135.804848),
+                            span: MKCoordinateSpan(latitudeDelta: 2.0, longitudeDelta: 2.0)
+                        )
+                    )
+                }
                 await viewModel.load()
             }
         }
