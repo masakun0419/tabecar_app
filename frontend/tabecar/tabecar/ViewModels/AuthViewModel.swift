@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 @MainActor
@@ -48,3 +49,4 @@ final class AuthViewModel: ObservableObject {
         }
     }
 }
+

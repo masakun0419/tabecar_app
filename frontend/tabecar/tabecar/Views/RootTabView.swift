@@ -37,5 +37,6 @@ struct RootTabView: View {
                     Label("設定", systemImage: "person.crop.circle")
                 }
         }
+        .tint(Tabecar.orange)
     }
 }

@@ -9,32 +9,28 @@ struct NotificationsView: View {
                 if let error = viewModel.errorMessage {
                     Text(error)
                         .foregroundStyle(.red)
+                        .listRowBackground(Color.clear)
                 }
 
                 ForEach(viewModel.notifications) { notification in
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text(notification.title)
-                                .font(.headline)
-                            Spacer()
-                            Text(notification.createdAt.formatted(date: .abbreviated, time: .shortened))
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                        Text(notification.body)
-                            .foregroundStyle(.secondary)
-                        Text(notification.notificationType)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
+                    NotificationRow(notification: notification)
+                        .listRowBackground(Color.white)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                        .listRowSeparator(.hidden)
                 }
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Tabecar.background)
             .overlay {
                 if viewModel.isLoading {
                     ProgressView()
                 } else if viewModel.notifications.isEmpty && viewModel.errorMessage == nil {
-                    ContentUnavailableView("通知なし", systemImage: "bell", description: Text("出店通知がここに表示されます"))
+                    ContentUnavailableView(
+                        "通知なし",
+                        systemImage: "bell",
+                        description: Text("出店通知がここに表示されます")
+                    )
                 }
             }
             .navigationTitle("通知")
@@ -45,5 +41,46 @@ struct NotificationsView: View {
                 await viewModel.load()
             }
         }
+        .tint(Tabecar.orange)
+    }
+}
+
+private struct NotificationRow: View {
+    let notification: AppNotification
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(Tabecar.orange.opacity(0.12))
+                    .frame(width: 42, height: 42)
+                Image(systemName: "bell.fill")
+                    .foregroundStyle(Tabecar.orange)
+                    .font(.system(size: 17))
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(notification.title)
+                        .font(.headline)
+                        .foregroundStyle(Tabecar.textPrimary)
+                    Spacer()
+                    Text(notification.createdAt.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption2)
+                        .foregroundStyle(Tabecar.textSecondary)
+                }
+                Text(notification.body)
+                    .font(.subheadline)
+                    .foregroundStyle(Tabecar.textSecondary)
+                Text(notification.notificationType)
+                    .font(.caption2)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Tabecar.orange.opacity(0.1))
+                    .foregroundStyle(Tabecar.orange)
+                    .clipShape(Capsule())
+            }
+        }
+        .padding(.vertical, 4)
     }
 }

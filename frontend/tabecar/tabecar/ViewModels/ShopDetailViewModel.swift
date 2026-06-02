@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 @MainActor
@@ -35,3 +36,4 @@ final class ShopDetailViewModel: ObservableObject {
         }
     }
 }
+

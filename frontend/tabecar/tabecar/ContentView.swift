@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 struct ContentView: View {
@@ -13,6 +14,7 @@ struct ContentView: View {
                     .environmentObject(session)
             }
         }
+        .tint(Tabecar.orange)
         .task {
             await session.restore()
         }
