@@ -31,6 +31,11 @@ struct SoftTextField: View {
     var isSecure: Bool = false
     var isEmail: Bool = false
 
+    private var placeholderPrompt: Text {
+        Text(placeholder)
+            .foregroundStyle(Tabecar.textSecondary.opacity(0.45))
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: systemImage)
@@ -47,17 +52,22 @@ struct SoftTextField: View {
     @ViewBuilder
     private var inputField: some View {
         if isSecure {
-            SecureField(placeholder, text: $text)
+            SecureField("", text: $text, prompt: placeholderPrompt)
+                .foregroundStyle(Tabecar.textPrimary)
         } else if isEmail {
             #if os(iOS)
-            TextField(placeholder, text: $text)
+            TextField("", text: $text, prompt: placeholderPrompt)
                 .keyboardType(.emailAddress)
                 .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .foregroundStyle(Tabecar.textPrimary)
             #else
-            TextField(placeholder, text: $text)
+            TextField("", text: $text, prompt: placeholderPrompt)
+                .foregroundStyle(Tabecar.textPrimary)
             #endif
         } else {
-            TextField(placeholder, text: $text)
+            TextField("", text: $text, prompt: placeholderPrompt)
+                .foregroundStyle(Tabecar.textPrimary)
         }
     }
 }

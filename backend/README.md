@@ -19,10 +19,10 @@ pip install -r requirements.txt
 
 # 環境変数
 cp .env.example .env
-# .env の DATABASE_URL を実環境に合わせて編集（後述）
+# .env の DATABASE_URL を編集（後述）
 
-# PostgreSQL 起動（Docker 利用時）
-docker compose up -d
+# PostgreSQL が起動していることを確認
+sudo systemctl status postgresql
 
 # API 起動
 uvicorn app.main:app --reload --host 0.0.0.0 --port 9999
@@ -32,7 +32,7 @@ API ベース URL: `http://localhost:9999/api/v1`
 
 Swagger UI: `http://localhost:9999/docs`
 
-## 本番サーバー環境 (ubuntuserver)
+## サーバー環境 (Ubuntu)
 
 ### ポート
 
@@ -53,7 +53,7 @@ OpenAPI 仕様 (`openapi.yaml`) の servers URL は `8888` のままだが、実
 | ユーザー | `tabecar` |
 | パスワード | `tabecar_db` |
 
-`.env` の設定例:
+`.env` の設定:
 
 ```env
 DATABASE_URL=postgresql://tabecar:tabecar_db@localhost:5432/tabecar_db
@@ -62,7 +62,15 @@ JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=10080
 ```
 
-### DB セットアップ手順（参考）
+psql で接続:
+
+```bash
+PGPASSWORD=tabecar_db psql -U tabecar -h localhost -d tabecar_db
+# または
+psql "postgresql://tabecar:tabecar_db@localhost:5432/tabecar_db"
+```
+
+### DB セットアップ手順
 
 DB `tabecar_db` は既に作成済み。ユーザー作成・パスワード設定が必要な場合:
 
@@ -71,15 +79,15 @@ sudo -u postgres psql
 ```
 
 ```sql
-ALTER USER tabecar WITH PASSWORD 'tabecar_db';
+CREATE USER tabecar WITH PASSWORD 'tabecar_db';
+CREATE DATABASE tabecar_db OWNER tabecar;
 GRANT ALL ON SCHEMA public TO tabecar;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO tabecar;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO tabecar;
 ```
 
 スキーマ・seed 投入（未投入の場合）:
 
 ```bash
+cd backend
 PGPASSWORD=tabecar_db psql -U tabecar -d tabecar_db -h localhost -f schema.sql
 PGPASSWORD=tabecar_db psql -U tabecar -d tabecar_db -h localhost -f seed.sql
 ```
@@ -87,8 +95,11 @@ PGPASSWORD=tabecar_db psql -U tabecar -d tabecar_db -h localhost -f seed.sql
 ### 動作確認
 
 ```bash
-# ヘルスチェック
+# ヘルスチェック（API プロセスのみ）
 curl http://localhost:9999/health
+
+# DB 接続チェック（500 エラー調査用）
+curl http://localhost:9999/health/db
 
 # 店舗一覧
 curl http://localhost:9999/api/v1/shops
@@ -122,6 +133,64 @@ curl -X POST http://localhost:9999/api/v1/auth/login \
 
 - `user01@example.com` (一般ユーザー)
 - `shop01@example.com` (店舗ユーザー)
+
+## トラブルシューティング
+
+### ログイン時に Internal Server Error (500)
+
+パスワード間違いの場合は **401** になる。500 はサーバー側の異常。
+
+**重要:** `/health` は API プロセスだけの確認。**DB は `/health/db` で確認する。**
+
+```bash
+# OK でも shops が 500 になる典型パターン
+curl http://localhost:9999/health      # → ok（DB未使用）
+curl http://localhost:9999/health/db    # → error（ここが本当の原因）
+curl http://localhost:9999/api/v1/shops # → 500
+```
+
+一括診断:
+
+```bash
+bash scripts/check_server.sh
+```
+
+1. **DB 接続を確認**
+   ```bash
+   curl http://localhost:9999/health/db
+   ```
+   HTTP 503 / `{"status":"error",...}` なら PostgreSQL 接続に問題あり。
+
+2. **`.env` の `DATABASE_URL` を確認**
+   ```env
+   DATABASE_URL=postgresql://tabecar:tabecar_db@localhost:5432/tabecar_db
+   ```
+   `.env` がないとデフォルトの `tabecar/tabecar@.../tabecar` で接続しようとして失敗する。
+
+3. **PostgreSQL が起動しているか**
+   ```bash
+   sudo systemctl status postgresql
+   PGPASSWORD=tabecar_db psql -U tabecar -d tabecar_db -h localhost -c "SELECT 1"
+   ```
+
+4. **API ログを確認（エラー内容がここに出る）**
+   ```bash
+   sudo journalctl -u tabecar-api.service -n 50 --no-pager
+   ```
+   よくあるログ:
+   - `relation "shops" does not exist` → テーブル未作成
+   - `password authentication failed` → `.env` のパスワード不一致
+   - `database "tabecar" does not exist` → DB名の取り違え
+
+5. **テーブル未作成の場合**
+   ```bash
+   PGPASSWORD=tabecar_db psql -U tabecar -d tabecar_db -h localhost -c "\dt"
+   # 空なら schema + seed を投入
+   PGPASSWORD=tabecar_db psql -U tabecar -d tabecar_db -h localhost -f schema.sql
+   PGPASSWORD=tabecar_db psql -U tabecar -d tabecar_db -h localhost -f seed.sql
+   sudo systemctl restart tabecar-api.service
+   bash scripts/check_server.sh
+   ```
 
 ## 変更履歴
 
