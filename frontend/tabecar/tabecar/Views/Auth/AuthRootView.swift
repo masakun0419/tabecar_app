@@ -4,6 +4,7 @@ struct AuthRootView: View {
     @EnvironmentObject private var session: AuthSession
     @StateObject private var viewModel = AuthViewModel()
     @State private var mode: AuthMode = .login
+    @State private var didAttemptBiometricLogin = false
 
     var body: some View {
         ZStack {
@@ -102,6 +103,34 @@ struct AuthRootView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
 
+                        // Biometric login (general users only)
+                        if session.biometricLoginAvailable, viewModel.userType == .user, mode == .login {
+                            VStack(spacing: 8) {
+                                if let email = session.savedEmail {
+                                    Text(email)
+                                        .font(.caption)
+                                        .foregroundStyle(Tabecar.textSecondary)
+                                }
+
+                                Button {
+                                    Task { await viewModel.loginWithBiometrics(session: session) }
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: session.biometricSystemImage)
+                                            .font(.title2)
+                                        Text("\(session.biometricLabel)でログイン")
+                                            .font(.headline)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(Tabecar.orange.opacity(0.12))
+                                    .foregroundStyle(Tabecar.orange)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                                }
+                                .disabled(viewModel.isLoading)
+                            }
+                        }
+
                         // Primary action button
                         Button {
                             Task {
@@ -154,6 +183,17 @@ struct AuthRootView: View {
                 }
             }
             .scrollDismissesKeyboard(.interactively)
+        }
+        .onAppear {
+            if let email = session.savedEmail, viewModel.email.isEmpty {
+                viewModel.email = email
+            }
+            guard !didAttemptBiometricLogin,
+                  session.biometricLoginAvailable,
+                  viewModel.userType == .user,
+                  mode == .login else { return }
+            didAttemptBiometricLogin = true
+            Task { await viewModel.loginWithBiometrics(session: session) }
         }
     }
 }

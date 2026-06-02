@@ -6,7 +6,9 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if session.isAuthenticated {
+            if !session.hasFinishedRestore {
+                ProgressView()
+            } else if session.isAuthenticated {
                 RootTabView()
                     .environmentObject(session)
             } else {
